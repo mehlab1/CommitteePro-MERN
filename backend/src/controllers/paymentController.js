@@ -6,7 +6,9 @@ const Transaction = require("../models/Transaction");
 const Notification = require("../models/Notification");
 const UserProfile = require("../models/UserProfile");
 const Wallet = require("../models/Wallet");
+const User = require("../models/User");
 const generateTransactionId = require("../utils/generateTransactionId");
+const { runSuspiciousRules } = require("../utils/suspiciousRules");
 
 const GRACE_PERIOD_HOURS = 24;
 const MOCK_RAAST_SUCCESS_RATE = 0.8;
@@ -137,7 +139,7 @@ const initiateContributions = async (req, res, next) => {
         paymentRecord.gracePeriodEndsAt = undefined;
         await paymentRecord.save();
 
-        await Transaction.create({
+        let contributionTransaction = await Transaction.create({
           transactionId: generateTransactionId(),
           senderId: membership.userId,
           committeeId,
@@ -147,6 +149,53 @@ const initiateContributions = async (req, res, next) => {
           status: "successful",
           description: "Cycle contribution collected via mock Raast",
         });
+
+        const suspiciousResult = await runSuspiciousRules(contributionTransaction);
+        if (suspiciousResult.isSuspicious) {
+          contributionTransaction = await Transaction.findByIdAndUpdate(
+            contributionTransaction._id,
+            {
+              $set: {
+                suspiciousFlag: true,
+                suspiciousReasons: suspiciousResult.reasons,
+                status: "flagged",
+              },
+            },
+            { new: true }
+          );
+
+          const [committeeAdmins, systemAdmins] = await Promise.all([
+            Membership.find({ committeeId, role: "admin", status: "active" }).select("userId"),
+            User.find({ role: "admin", status: "active" }).select("_id"),
+          ]);
+
+          const adminUserIdSet = new Set([
+            ...committeeAdmins.map((adminMembership) => String(adminMembership.userId)),
+            ...systemAdmins.map((admin) => String(admin._id)),
+          ]);
+          adminUserIdSet.delete(String(membership.userId));
+
+          const adminNotifications = [...adminUserIdSet].map((adminUserId) => ({
+            userId: adminUserId,
+            title: "Suspicious transaction flagged",
+            message: `Transaction ${contributionTransaction.transactionId} was flagged for review.`,
+            type: "security",
+            relatedTransactionId: contributionTransaction._id,
+            relatedCommitteeId: committeeId,
+          }));
+
+          await Notification.create([
+            {
+              userId: membership.userId,
+              title: "Your transaction was flagged",
+              message: `Transaction ${contributionTransaction.transactionId} has been flagged for review.`,
+              type: "security",
+              relatedTransactionId: contributionTransaction._id,
+              relatedCommitteeId: committeeId,
+            },
+            ...adminNotifications,
+          ]);
+        }
 
         await Notification.create({
           userId: membership.userId,

@@ -2,7 +2,9 @@ const mongoose = require("mongoose");
 const Wallet = require("../models/Wallet");
 const User = require("../models/User");
 const Transaction = require("../models/Transaction");
+const Notification = require("../models/Notification");
 const generateTransactionId = require("../utils/generateTransactionId");
+const { runSuspiciousRules } = require("../utils/suspiciousRules");
 
 const getWallet = async (req, res, next) => {
   try {
@@ -223,15 +225,54 @@ const transfer = async (req, res, next) => {
       );
     });
 
+    let createdTransaction = Array.isArray(transferTransaction)
+      ? transferTransaction[0]
+      : transferTransaction;
+
+    const suspiciousResult = await runSuspiciousRules(createdTransaction);
+    if (suspiciousResult.isSuspicious) {
+      createdTransaction = await Transaction.findByIdAndUpdate(
+        createdTransaction._id,
+        {
+          $set: {
+            suspiciousFlag: true,
+            suspiciousReasons: suspiciousResult.reasons,
+            status: "flagged",
+          },
+        },
+        { new: true }
+      );
+
+      const adminUsers = await User.find({ role: "admin", status: "active" }).select("_id");
+      const adminNotifications = adminUsers
+        .filter((admin) => String(admin._id) !== String(req.user.userId))
+        .map((admin) => ({
+          userId: admin._id,
+          title: "Suspicious transaction flagged",
+          message: `Transaction ${createdTransaction.transactionId} was flagged for review.`,
+          type: "security",
+          relatedTransactionId: createdTransaction._id,
+        }));
+
+      await Notification.create([
+        {
+          userId: req.user.userId,
+          title: "Your transaction was flagged",
+          message: `Transaction ${createdTransaction.transactionId} has been flagged for review.`,
+          type: "security",
+          relatedTransactionId: createdTransaction._id,
+        },
+        ...adminNotifications,
+      ]);
+    }
+
     return res.status(200).json({
       success: true,
       message: "Transfer successful",
       data: {
         senderWallet,
         receiverWallet,
-        transaction: Array.isArray(transferTransaction)
-          ? transferTransaction[0]
-          : transferTransaction,
+        transaction: createdTransaction,
       },
     });
   } catch (error) {

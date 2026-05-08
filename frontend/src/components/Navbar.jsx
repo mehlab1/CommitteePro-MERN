@@ -20,6 +20,10 @@ const Navbar = () => {
 
   const authLinks = [
     { to: "/dashboard", label: "Dashboard" },
+    { to: "/committees/create", label: "Create Committee" },
+    { to: "/transactions", label: "Transactions" },
+    { to: "/expenses", label: "Expenses" },
+    { to: "/budgets", label: "Budgets" },
     { to: "/wallet", label: "Wallet" },
     { to: "/profile", label: "Profile" },
     { to: "/notifications", label: "Notifications" },

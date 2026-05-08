@@ -7,6 +7,14 @@ import DashboardPage from "../pages/DashboardPage";
 import WalletPage from "../pages/WalletPage";
 import ProfilePage from "../pages/ProfilePage";
 import PlaceholderPage from "../pages/PlaceholderPage";
+import CreateCommitteePage from "../pages/CreateCommitteePage";
+import CommitteeDetailPage from "../pages/CommitteeDetailPage";
+import JoinCommitteePage from "../pages/JoinCommitteePage";
+import TransactionsPage from "../pages/TransactionsPage";
+import TransactionReceiptPage from "../pages/TransactionReceiptPage";
+import ExpensesPage from "../pages/ExpensesPage";
+import BudgetsPage from "../pages/BudgetsPage";
+import NotificationsPage from "../pages/NotificationsPage";
 
 const AppRoutes = () => {
   return (
@@ -43,7 +51,15 @@ const AppRoutes = () => {
         path="/transactions"
         element={
           <ProtectedRoute>
-            <PlaceholderPage title="Transactions" />
+            <TransactionsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/transactions/:id/receipt"
+        element={
+          <ProtectedRoute>
+            <TransactionReceiptPage />
           </ProtectedRoute>
         }
       />
@@ -51,7 +67,7 @@ const AppRoutes = () => {
         path="/expenses"
         element={
           <ProtectedRoute>
-            <PlaceholderPage title="Expenses" />
+            <ExpensesPage />
           </ProtectedRoute>
         }
       />
@@ -59,7 +75,7 @@ const AppRoutes = () => {
         path="/budgets"
         element={
           <ProtectedRoute>
-            <PlaceholderPage title="Budgets" />
+            <BudgetsPage />
           </ProtectedRoute>
         }
       />
@@ -67,7 +83,15 @@ const AppRoutes = () => {
         path="/committees"
         element={
           <ProtectedRoute>
-            <PlaceholderPage title="Committees" />
+            <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/committees/create"
+        element={
+          <ProtectedRoute>
+            <CreateCommitteePage />
           </ProtectedRoute>
         }
       />
@@ -75,7 +99,15 @@ const AppRoutes = () => {
         path="/committees/:id"
         element={
           <ProtectedRoute>
-            <PlaceholderPage title="Committee Details" />
+            <CommitteeDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/join/:token"
+        element={
+          <ProtectedRoute>
+            <JoinCommitteePage />
           </ProtectedRoute>
         }
       />
@@ -83,7 +115,7 @@ const AppRoutes = () => {
         path="/notifications"
         element={
           <ProtectedRoute>
-            <PlaceholderPage title="Notifications" />
+            <NotificationsPage />
           </ProtectedRoute>
         }
       />
