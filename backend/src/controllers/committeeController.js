@@ -4,6 +4,7 @@ const InviteToken = require("../models/InviteToken");
 const Cycle = require("../models/Cycle");
 const PaymentRecord = require("../models/PaymentRecord");
 const UserProfile = require("../models/UserProfile");
+const AgreementSignature = require("../models/AgreementSignature");
 
 const MIN_START_OFFSET_DAYS = 3;
 
@@ -242,9 +243,131 @@ const generateInvite = async (req, res, next) => {
   }
 };
 
+const joinCommittee = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+
+    const inviteToken = await InviteToken.findOne({ token, isActive: true });
+    if (!inviteToken) {
+      return res.status(404).json({ success: false, message: "Invite token is invalid" });
+    }
+
+    if (inviteToken.expiresAt <= new Date()) {
+      return res.status(400).json({ success: false, message: "Invite token has expired" });
+    }
+
+    const committee = await Committee.findById(inviteToken.committeeId);
+    if (!committee) {
+      return res.status(404).json({ success: false, message: "Committee not found" });
+    }
+
+    const memberCount = await Membership.countDocuments({ committeeId: committee._id });
+    if (memberCount >= committee.memberCount) {
+      return res.status(400).json({ success: false, message: "Committee is already full" });
+    }
+
+    const existingMembership = await Membership.findOne({
+      committeeId: committee._id,
+      userId: req.user.userId,
+    });
+    if (existingMembership) {
+      return res.status(400).json({ success: false, message: "User is already a committee member" });
+    }
+
+    await Membership.create({
+      userId: req.user.userId,
+      committeeId: committee._id,
+      role: "member",
+      status: "pending",
+      hasSignedAgreement: false,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Joined committee successfully",
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const signAgreement = async (req, res, next) => {
+  try {
+    const { id: committeeId } = req.params;
+
+    const committee = await Committee.findById(committeeId);
+    if (!committee) {
+      return res.status(404).json({ success: false, message: "Committee not found" });
+    }
+
+    const membership = await Membership.findOne({
+      committeeId,
+      userId: req.user.userId,
+    });
+
+    if (!membership) {
+      return res.status(403).json({ success: false, message: "Forbidden: Not a committee member" });
+    }
+
+    await AgreementSignature.findOneAndUpdate(
+      { userId: req.user.userId, committeeId },
+      {
+        $set: {
+          ipAddress: req.ip,
+          userAgent: req.headers["user-agent"] || "unknown",
+          signedAt: new Date(),
+        },
+        $setOnInsert: {
+          userId: req.user.userId,
+          committeeId,
+          agreementVersion: "v1.0",
+        },
+      },
+      { upsert: true, new: true }
+    );
+
+    membership.hasSignedAgreement = true;
+    await membership.save();
+
+    const totalMemberships = await Membership.countDocuments({ committeeId });
+    const signedMemberships = await Membership.countDocuments({ committeeId, hasSignedAgreement: true });
+    const allMembersSigned = totalMemberships > 0 && totalMemberships === signedMemberships;
+    const startDateReached = committee.startDate <= new Date();
+
+    if (allMembersSigned && startDateReached) {
+      committee.status = "active";
+      await committee.save();
+
+      const existingFirstCycle = await Cycle.findOne({ committeeId, cycleNumber: 1 });
+      if (!existingFirstCycle) {
+        await Cycle.create({
+          committeeId,
+          cycleNumber: 1,
+          potAmount: committee.contributionAmount * committee.memberCount,
+          payoutDate: committee.startDate,
+          status: "scheduled",
+        });
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Agreement signed successfully",
+      data: {
+        allMembersSigned,
+        committeeStatus: allMembersSigned && startDateReached ? "active" : committee.status,
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   createCommittee,
   getMyCommittees,
   getCommitteeById,
   generateInvite,
+  joinCommittee,
+  signAgreement,
 };
