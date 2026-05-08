@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import api from "../services/api";
+import EmptyState from "../components/EmptyState";
+import LoadingSkeleton from "../components/LoadingSkeleton";
 
 const badgeClass = {
   successful: "bg-emerald-100 text-emerald-700",
@@ -13,13 +15,19 @@ const badgeClass = {
 
 const TransactionsPage = () => {
   const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState({ type: "", status: "", search: "" });
   const navigate = useNavigate();
 
   const load = async () => {
     const params = Object.fromEntries(Object.entries(query).filter(([, value]) => value));
-    const response = await api.get("/transactions", { params });
-    setTransactions(response?.data?.data?.transactions || []);
+    setLoading(true);
+    try {
+      const response = await api.get("/transactions", { params });
+      setTransactions(response?.data?.data?.transactions || []);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -55,7 +63,7 @@ const TransactionsPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <main className="mx-auto max-w-6xl px-4 py-8">
+      <main className="page-transition mx-auto max-w-6xl px-4 py-8">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-2xl font-bold text-gray-900">Transactions</h1>
           <button onClick={exportCsv} className="rounded border border-gray-300 px-3 py-2 text-sm">
@@ -64,27 +72,36 @@ const TransactionsPage = () => {
         </div>
 
         <div className="mt-4 grid gap-2 sm:grid-cols-3">
-          <select className="rounded border p-2" value={query.type} onChange={(e) => setQuery((p) => ({ ...p, type: e.target.value }))}>
-            <option value="">All types</option>
-            <option value="deposit">Deposit</option>
-            <option value="withdrawal">Withdrawal</option>
-            <option value="transfer">Transfer</option>
-            <option value="contribution">Contribution</option>
-            <option value="payout">Payout</option>
-          </select>
-          <select className="rounded border p-2" value={query.status} onChange={(e) => setQuery((p) => ({ ...p, status: e.target.value }))}>
-            <option value="">All status</option>
-            <option value="successful">Successful</option>
-            <option value="pending">Pending</option>
-            <option value="failed">Failed</option>
-            <option value="flagged">Flagged</option>
-          </select>
-          <input
-            className="rounded border p-2"
-            placeholder="Search transaction ID"
-            value={query.search}
-            onChange={(e) => setQuery((p) => ({ ...p, search: e.target.value }))}
-          />
+          <label className="text-sm text-gray-700">
+            <span className="mb-1 block">Type</span>
+            <select className="w-full rounded border p-2" value={query.type} onChange={(e) => setQuery((p) => ({ ...p, type: e.target.value }))}>
+              <option value="">All types</option>
+              <option value="deposit">Deposit</option>
+              <option value="withdrawal">Withdrawal</option>
+              <option value="transfer">Transfer</option>
+              <option value="contribution">Contribution</option>
+              <option value="payout">Payout</option>
+            </select>
+          </label>
+          <label className="text-sm text-gray-700">
+            <span className="mb-1 block">Status</span>
+            <select className="w-full rounded border p-2" value={query.status} onChange={(e) => setQuery((p) => ({ ...p, status: e.target.value }))}>
+              <option value="">All status</option>
+              <option value="successful">Successful</option>
+              <option value="pending">Pending</option>
+              <option value="failed">Failed</option>
+              <option value="flagged">Flagged</option>
+            </select>
+          </label>
+          <label className="text-sm text-gray-700">
+            <span className="mb-1 block">Search transaction ID</span>
+            <input
+              className="w-full rounded border p-2"
+              placeholder="Search transaction ID"
+              value={query.search}
+              onChange={(e) => setQuery((p) => ({ ...p, search: e.target.value }))}
+            />
+          </label>
         </div>
 
         <button onClick={load} className="mt-2 rounded bg-indigo-600 px-3 py-1.5 text-sm text-white">
@@ -103,7 +120,17 @@ const TransactionsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((transaction) => (
+              {loading
+                ? Array.from({ length: 5 }).map((_, idx) => (
+                    <tr key={`sk-${idx}`} className="border-b">
+                      <td className="px-3 py-2"><LoadingSkeleton className="h-4 w-32" /></td>
+                      <td className="px-3 py-2"><LoadingSkeleton className="h-4 w-20" /></td>
+                      <td className="px-3 py-2"><LoadingSkeleton className="h-4 w-24" /></td>
+                      <td className="px-3 py-2"><LoadingSkeleton className="h-4 w-16" /></td>
+                      <td className="px-3 py-2"><LoadingSkeleton className="h-4 w-28" /></td>
+                    </tr>
+                  ))
+                : filtered.map((transaction) => (
                 <tr
                   key={transaction._id}
                   className="cursor-pointer border-b last:border-none hover:bg-gray-50"
@@ -123,9 +150,17 @@ const TransactionsPage = () => {
                   </td>
                   <td className="px-3 py-2">{transaction.transactionId}</td>
                 </tr>
-              ))}
+                  ))}
             </tbody>
           </table>
+          {!loading && filtered.length === 0 ? (
+            <div className="p-4">
+              <EmptyState
+                title="No transactions yet"
+                description="Transactions will appear once you deposit, transfer, or receive payouts."
+              />
+            </div>
+          ) : null}
         </div>
       </main>
       <Footer />

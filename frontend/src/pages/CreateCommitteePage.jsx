@@ -52,24 +52,24 @@ const CreateCommitteePage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <main className="mx-auto max-w-3xl px-4 py-8">
+      <main className="page-transition mx-auto max-w-3xl px-4 py-8">
         <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
           <h1 className="text-2xl font-bold text-gray-900">Create Committee</h1>
 
           {step === 1 ? (
             <div className="mt-5 grid gap-4">
-              <input className="rounded border p-2" placeholder="Committee name" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
-              <input className="rounded border p-2" type="number" placeholder="Contribution amount" value={form.contributionAmount} onChange={(e) => setForm((p) => ({ ...p, contributionAmount: e.target.value }))} />
-              <input className="rounded border p-2" type="number" min="4" max="20" placeholder="Members (4-20)" value={form.memberCount} onChange={(e) => setForm((p) => ({ ...p, memberCount: e.target.value }))} />
-              <select className="rounded border p-2" value={form.cycleFrequency} onChange={(e) => setForm((p) => ({ ...p, cycleFrequency: e.target.value }))}>
+              <label className="text-sm text-gray-700"><span className="mb-1 block">Committee name</span><input className="w-full rounded border p-2" placeholder="Committee name" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></label>
+              <label className="text-sm text-gray-700"><span className="mb-1 block">Contribution amount</span><input className="w-full rounded border p-2" type="number" placeholder="Contribution amount" value={form.contributionAmount} onChange={(e) => setForm((p) => ({ ...p, contributionAmount: e.target.value }))} /></label>
+              <label className="text-sm text-gray-700"><span className="mb-1 block">Members (4-20)</span><input className="w-full rounded border p-2" type="number" min="4" max="20" placeholder="Members (4-20)" value={form.memberCount} onChange={(e) => setForm((p) => ({ ...p, memberCount: e.target.value }))} /></label>
+              <label className="text-sm text-gray-700"><span className="mb-1 block">Cycle frequency</span><select className="w-full rounded border p-2" value={form.cycleFrequency} onChange={(e) => setForm((p) => ({ ...p, cycleFrequency: e.target.value }))}>
                 <option value="monthly">Monthly</option>
                 <option value="weekly">Weekly</option>
-              </select>
-              <select className="rounded border p-2" value={form.payoutModel} onChange={(e) => setForm((p) => ({ ...p, payoutModel: e.target.value }))}>
+              </select></label>
+              <label className="text-sm text-gray-700"><span className="mb-1 block">Payout model</span><select className="w-full rounded border p-2" value={form.payoutModel} onChange={(e) => setForm((p) => ({ ...p, payoutModel: e.target.value }))}>
                 <option value="bidding">Bidding</option>
                 <option value="fixed">Fixed</option>
-              </select>
-              <input className="rounded border p-2" type="date" value={form.startDate} onChange={(e) => setForm((p) => ({ ...p, startDate: e.target.value }))} />
+              </select></label>
+              <label className="text-sm text-gray-700"><span className="mb-1 block">Start date</span><input className="w-full rounded border p-2" type="date" value={form.startDate} onChange={(e) => setForm((p) => ({ ...p, startDate: e.target.value }))} /></label>
               <div className="flex justify-end">
                 <button disabled={!canContinue} onClick={() => setStep(2)} className="rounded bg-indigo-600 px-4 py-2 text-white disabled:bg-indigo-300">
                   Review

@@ -4,6 +4,8 @@ import { ArcElement, Chart as ChartJS, Legend, Tooltip } from "chart.js";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import api from "../services/api";
+import EmptyState from "../components/EmptyState";
+import LoadingSkeleton from "../components/LoadingSkeleton";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -20,14 +22,20 @@ const ExpensesPage = () => {
     paymentMethod: "Wallet",
   });
   const [editingId, setEditingId] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const load = async () => {
-    const [expensesRes, summaryRes] = await Promise.all([
-      api.get("/expenses"),
-      api.get("/expenses/summary/categories"),
-    ]);
-    setExpenses(expensesRes?.data?.data || []);
-    setSummary(summaryRes?.data?.data || []);
+    setLoading(true);
+    try {
+      const [expensesRes, summaryRes] = await Promise.all([
+        api.get("/expenses"),
+        api.get("/expenses/summary/categories"),
+      ]);
+      setExpenses(expensesRes?.data?.data || []);
+      setSummary(summaryRes?.data?.data || []);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -85,22 +93,22 @@ const ExpensesPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <main className="mx-auto max-w-7xl px-4 py-8">
+      <main className="page-transition mx-auto max-w-7xl px-4 py-8">
         <h1 className="text-2xl font-bold text-gray-900">Expenses</h1>
 
         <div className="mt-4 grid gap-4 lg:grid-cols-3">
           <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200 lg:col-span-2">
             <h2 className="font-semibold">Add Expense</h2>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              <input className="rounded border p-2" placeholder="Title" value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} />
-              <input className="rounded border p-2" type="number" placeholder="Amount" value={form.amount} onChange={(e) => setForm((p) => ({ ...p, amount: e.target.value }))} />
-              <select className="rounded border p-2" value={form.categoryId} onChange={(e) => setForm((p) => ({ ...p, categoryId: e.target.value }))}>
+              <label className="text-sm text-gray-700"><span className="mb-1 block">Title</span><input className="w-full rounded border p-2" placeholder="Title" value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} /></label>
+              <label className="text-sm text-gray-700"><span className="mb-1 block">Amount</span><input className="w-full rounded border p-2" type="number" placeholder="Amount" value={form.amount} onChange={(e) => setForm((p) => ({ ...p, amount: e.target.value }))} /></label>
+              <label className="text-sm text-gray-700"><span className="mb-1 block">Category</span><select className="w-full rounded border p-2" value={form.categoryId} onChange={(e) => setForm((p) => ({ ...p, categoryId: e.target.value }))}>
                 <option value="">Select category</option>
                 {categories.map((category) => <option key={category._id} value={category._id}>{category.name}</option>)}
-              </select>
-              <input className="rounded border p-2" type="date" value={form.date} onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))} />
-              <input className="rounded border p-2" placeholder="Notes" value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} />
-              <input className="rounded border p-2" placeholder="Payment Method" value={form.paymentMethod} onChange={(e) => setForm((p) => ({ ...p, paymentMethod: e.target.value }))} />
+              </select></label>
+              <label className="text-sm text-gray-700"><span className="mb-1 block">Date</span><input className="w-full rounded border p-2" type="date" value={form.date} onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))} /></label>
+              <label className="text-sm text-gray-700"><span className="mb-1 block">Notes</span><input className="w-full rounded border p-2" placeholder="Notes" value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} /></label>
+              <label className="text-sm text-gray-700"><span className="mb-1 block">Payment Method</span><input className="w-full rounded border p-2" placeholder="Payment Method" value={form.paymentMethod} onChange={(e) => setForm((p) => ({ ...p, paymentMethod: e.target.value }))} /></label>
             </div>
             <button className="mt-3 rounded bg-indigo-600 px-3 py-2 text-sm text-white" onClick={save}>
               {editingId ? "Update Expense" : "Add Expense"}
@@ -124,7 +132,17 @@ const ExpensesPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {expenses.map((expense) => (
+                {loading
+                  ? Array.from({ length: 4 }).map((_, idx) => (
+                      <tr key={`s-${idx}`} className="border-b">
+                        <td className="py-2"><LoadingSkeleton className="h-4 w-28" /></td>
+                        <td><LoadingSkeleton className="h-4 w-16" /></td>
+                        <td><LoadingSkeleton className="h-4 w-20" /></td>
+                        <td><LoadingSkeleton className="h-4 w-24" /></td>
+                        <td><LoadingSkeleton className="h-4 w-14" /></td>
+                      </tr>
+                    ))
+                  : expenses.map((expense) => (
                   <tr key={expense._id} className="border-b last:border-none">
                     <td className="py-2">{expense.title}</td>
                     <td>PKR {expense.amount}</td>
@@ -135,9 +153,12 @@ const ExpensesPage = () => {
                       <button className="text-rose-600" onClick={async () => { await api.delete(`/expenses/${expense._id}`); await load(); }}>Delete</button>
                     </td>
                   </tr>
-                ))}
+                    ))}
               </tbody>
             </table>
+            {!loading && expenses.length === 0 ? (
+              <EmptyState title="No expenses recorded" description="Add your first expense to start tracking spend." />
+            ) : null}
           </div>
           <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200">
             <h2 className="mb-2 font-semibold">Category Pie Chart</h2>

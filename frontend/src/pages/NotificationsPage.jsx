@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import api from "../services/api";
+import EmptyState from "../components/EmptyState";
+import LoadingSkeleton from "../components/LoadingSkeleton";
 
 const iconMap = {
   transaction: "💸",
@@ -15,10 +17,16 @@ const iconMap = {
 
 const NotificationsPage = () => {
   const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const load = async () => {
-    const response = await api.get("/notifications");
-    setNotifications(response?.data?.data || []);
+    setLoading(true);
+    try {
+      const response = await api.get("/notifications");
+      setNotifications(response?.data?.data || []);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -28,7 +36,7 @@ const NotificationsPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <main className="mx-auto max-w-5xl px-4 py-8">
+      <main className="page-transition mx-auto max-w-5xl px-4 py-8">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
           <button
@@ -43,7 +51,14 @@ const NotificationsPage = () => {
         </div>
 
         <div className="mt-4 space-y-2">
-          {notifications.map((notification) => (
+          {loading
+            ? Array.from({ length: 4 }).map((_, idx) => (
+                <div key={idx} className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200">
+                  <LoadingSkeleton className="h-4 w-44" />
+                  <LoadingSkeleton className="mt-2 h-3 w-full" />
+                </div>
+              ))
+            : notifications.map((notification) => (
             <button
               key={notification._id}
               type="button"
@@ -69,7 +84,13 @@ const NotificationsPage = () => {
               </div>
               <p className="mt-1 text-sm text-gray-600">{notification.message}</p>
             </button>
-          ))}
+              ))}
+          {!loading && notifications.length === 0 ? (
+            <EmptyState
+              title="No notifications"
+              description="You are all caught up."
+            />
+          ) : null}
         </div>
       </main>
       <Footer />

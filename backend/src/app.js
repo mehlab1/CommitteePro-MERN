@@ -4,6 +4,7 @@ const helmet = require("helmet");
 const loggingMiddleware = require("./middlewares/loggingMiddleware");
 const notFoundMiddleware = require("./middlewares/notFoundMiddleware");
 const errorMiddleware = require("./middlewares/errorMiddleware");
+const { sanitizeInputStrings } = require("./middlewares/validationMiddleware");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const walletRoutes = require("./routes/walletRoutes");
@@ -14,6 +15,8 @@ const transactionRoutes = require("./routes/transactionRoutes");
 const expenseRoutes = require("./routes/expenseRoutes");
 const budgetRoutes = require("./routes/budgetRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const adminRoutes = require("./routes/adminRoutes");
+const reportRoutes = require("./routes/reportRoutes");
 
 const app = express();
 
@@ -25,6 +28,7 @@ app.use(
   })
 );
 app.use(express.json());
+app.use(sanitizeInputStrings);
 app.use(loggingMiddleware);
 
 app.get("/api/health", (req, res) => {
@@ -44,6 +48,8 @@ app.use("/api/transactions", transactionRoutes);
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/budgets", budgetRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/reports", reportRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

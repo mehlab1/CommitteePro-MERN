@@ -46,7 +46,7 @@ const JoinCommitteePage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <main className="mx-auto max-w-4xl px-4 py-8">
+      <main className="page-transition mx-auto max-w-4xl px-4 py-8">
         <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-200">
           <h1 className="text-2xl font-bold text-gray-900">Join Committee</h1>
           <p className="mt-1 text-sm text-gray-600">Review details before joining with invite token.</p>

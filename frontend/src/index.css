@@ -1,1 +1,24 @@
 @import "tailwindcss";
+
+button,
+a,
+input,
+select,
+textarea {
+  min-height: 44px;
+}
+
+.page-transition {
+  animation: pageFade 220ms ease;
+}
+
+@keyframes pageFade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

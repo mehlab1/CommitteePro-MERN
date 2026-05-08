@@ -1,6 +1,6 @@
 const express = require("express");
 const authMiddleware = require("../middlewares/authMiddleware");
-const roleMiddleware = require("../middlewares/roleMiddleware");
+const { validateObjectIdParam } = require("../middlewares/validationMiddleware");
 const {
   initiateContributions,
   processPayout,
@@ -8,7 +8,7 @@ const {
 
 const router = express.Router();
 
-router.post("/initiate/:cycleId", authMiddleware, roleMiddleware("admin"), initiateContributions);
-router.post("/payout/:cycleId", authMiddleware, roleMiddleware("admin"), processPayout);
+router.post("/initiate/:cycleId", authMiddleware, validateObjectIdParam("cycleId"), initiateContributions);
+router.post("/payout/:cycleId", authMiddleware, validateObjectIdParam("cycleId"), processPayout);
 
 module.exports = router;

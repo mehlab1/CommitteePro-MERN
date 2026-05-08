@@ -7,6 +7,11 @@ const UserProfile = require("../models/UserProfile");
 const AgreementSignature = require("../models/AgreementSignature");
 
 const MIN_START_OFFSET_DAYS = 3;
+const addDays = (date, days) => {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+};
 
 const createCommittee = async (req, res, next) => {
   try {
@@ -327,6 +332,7 @@ const signAgreement = async (req, res, next) => {
     );
 
     membership.hasSignedAgreement = true;
+    membership.status = "active";
     await membership.save();
 
     const totalMemberships = await Membership.countDocuments({ committeeId });
@@ -335,6 +341,10 @@ const signAgreement = async (req, res, next) => {
     const startDateReached = committee.startDate <= new Date();
 
     if (allMembersSigned && startDateReached) {
+      await Membership.updateMany(
+        { committeeId, hasSignedAgreement: true, status: "pending" },
+        { $set: { status: "active" } }
+      );
       committee.status = "active";
       await committee.save();
 
@@ -344,6 +354,8 @@ const signAgreement = async (req, res, next) => {
           committeeId,
           cycleNumber: 1,
           potAmount: committee.contributionAmount * committee.memberCount,
+          biddingOpensAt: addDays(committee.startDate, -2),
+          biddingClosesAt: addDays(committee.startDate, -1),
           payoutDate: committee.startDate,
           status: "scheduled",
         });

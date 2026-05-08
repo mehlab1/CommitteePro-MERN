@@ -1,4 +1,44 @@
 const { body, param, validationResult } = require("express-validator");
+const mongoose = require("mongoose");
+
+const stripHtml = (value) => {
+  if (typeof value !== "string") {
+    return value;
+  }
+  return value.replace(/<[^>]*>/g, "").trim();
+};
+
+const sanitizeObjectStrings = (target) => {
+  if (!target || typeof target !== "object") {
+    return;
+  }
+
+  Object.keys(target).forEach((key) => {
+    const value = target[key];
+    if (typeof value === "string") {
+      target[key] = stripHtml(value);
+    } else if (Array.isArray(value)) {
+      target[key] = value.map((item) => {
+        if (typeof item === "string") {
+          return stripHtml(item);
+        }
+        if (item && typeof item === "object") {
+          sanitizeObjectStrings(item);
+        }
+        return item;
+      });
+    } else if (value && typeof value === "object") {
+      sanitizeObjectStrings(value);
+    }
+  });
+};
+
+const sanitizeInputStrings = (req, res, next) => {
+  sanitizeObjectStrings(req.body);
+  sanitizeObjectStrings(req.query);
+  sanitizeObjectStrings(req.params);
+  return next();
+};
 
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
@@ -72,6 +112,19 @@ const validateObjectId = [
   handleValidationErrors,
 ];
 
+const validateObjectIdParam = (paramName = "id") => {
+  return (req, res, next) => {
+    const value = req.params[paramName];
+    if (!value || !mongoose.Types.ObjectId.isValid(value)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid ${paramName} format`,
+      });
+    }
+    return next();
+  };
+};
+
 module.exports = {
   validateRegister,
   validateLogin,
@@ -79,4 +132,6 @@ module.exports = {
   validateWithdrawal,
   validateTransfer,
   validateObjectId,
+  validateObjectIdParam,
+  sanitizeInputStrings,
 };

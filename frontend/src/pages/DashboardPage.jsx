@@ -5,6 +5,8 @@ import Footer from "../components/Footer";
 import StatCard from "../components/StatCard";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
+import EmptyState from "../components/EmptyState";
+import LoadingSkeleton from "../components/LoadingSkeleton";
 
 const CommitteeCard = ({ committee }) => {
   const progress = useMemo(() => {
@@ -64,6 +66,7 @@ const DashboardPage = () => {
     overduePayments: 0,
     unlinkedAccounts: 0,
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
@@ -89,6 +92,8 @@ const DashboardPage = () => {
       } catch {
         setAdminCommittees([]);
         setMemberCommittees([]);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -108,7 +113,7 @@ const DashboardPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <main className="mx-auto max-w-7xl px-4 py-8">
+      <main className="page-transition mx-auto max-w-7xl px-4 py-8">
         <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-200">
           <div className="flex items-center justify-between">
             <div>
@@ -126,18 +131,26 @@ const DashboardPage = () => {
         </div>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <StatCard title="Total Saved" value={`PKR ${totalSaved.toLocaleString()}`} />
-          <StatCard title="Active Committees" value={allCommittees.length} />
-          <StatCard title="Wallet Balance" value={`PKR ${Number(walletBalance).toLocaleString()}`} />
-          <StatCard
-            title="Next Payment Due"
-            value={nextPayment ? new Date(nextPayment).toLocaleDateString() : "N/A"}
-          />
-          <StatCard
-            title="Trust Score"
-            value={user?.trustScore || "60"}
-            subtitle="Badge"
-          />
+          {loading ? (
+            Array.from({ length: 5 }).map((_, idx) => (
+              <div key={idx} className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-200">
+                <LoadingSkeleton className="h-3 w-24" />
+                <LoadingSkeleton className="mt-3 h-8 w-20" />
+                <LoadingSkeleton className="mt-2 h-3 w-28" />
+              </div>
+            ))
+          ) : (
+            <>
+              <StatCard title="Total Saved" value={`PKR ${totalSaved.toLocaleString()}`} />
+              <StatCard title="Active Committees" value={allCommittees.length} />
+              <StatCard title="Wallet Balance" value={`PKR ${Number(walletBalance).toLocaleString()}`} />
+              <StatCard
+                title="Next Payment Due"
+                value={nextPayment ? new Date(nextPayment).toLocaleDateString() : "N/A"}
+              />
+              <StatCard title="Trust Score" value={user?.trustScore || "60"} subtitle="Badge" />
+            </>
+          )}
         </div>
 
         <div className="mt-6 rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200">
@@ -163,18 +176,28 @@ const DashboardPage = () => {
             </Link>
           </div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {adminCommittees.map((committee) => (
-              <CommitteeCard key={committee._id} committee={committee} />
-            ))}
+            {adminCommittees.length > 0 ? (
+              adminCommittees.map((committee) => <CommitteeCard key={committee._id} committee={committee} />)
+            ) : (
+              <EmptyState
+                title="No committees managed yet"
+                description="Create a committee to start inviting members."
+              />
+            )}
           </div>
         </section>
 
         <section className="mt-8">
           <h2 className="mb-3 text-xl font-semibold text-gray-900">Committees I Joined</h2>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {memberCommittees.map((committee) => (
-              <CommitteeCard key={committee._id} committee={committee} />
-            ))}
+            {memberCommittees.length > 0 ? (
+              memberCommittees.map((committee) => <CommitteeCard key={committee._id} committee={committee} />)
+            ) : (
+              <EmptyState
+                title="No joined committees"
+                description="Join a committee with an invite token to see it here."
+              />
+            )}
           </div>
         </section>
       </main>

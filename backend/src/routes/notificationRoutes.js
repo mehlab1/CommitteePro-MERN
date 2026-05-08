@@ -1,5 +1,6 @@
 const express = require("express");
 const authMiddleware = require("../middlewares/authMiddleware");
+const { validateObjectIdParam } = require("../middlewares/validationMiddleware");
 const {
   getMyNotifications,
   markAsRead,
@@ -9,7 +10,7 @@ const {
 const router = express.Router();
 
 router.get("/", authMiddleware, getMyNotifications);
-router.patch("/:id/read", authMiddleware, markAsRead);
+router.patch("/:id/read", authMiddleware, validateObjectIdParam("id"), markAsRead);
 router.patch("/read-all", authMiddleware, markAllAsRead);
 
 module.exports = router;

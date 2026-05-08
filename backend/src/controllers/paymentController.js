@@ -77,7 +77,8 @@ const recalculateTrustScore = async (committeeId) => {
 
 const initiateContributions = async (req, res, next) => {
   try {
-    const { committeeId, cycleId } = req.body;
+    const committeeId = req.body.committeeId;
+    const cycleId = req.params.cycleId || req.body.cycleId;
 
     if (!committeeId || !cycleId) {
       return res.status(400).json({
@@ -240,7 +241,8 @@ const initiateContributions = async (req, res, next) => {
 
 const processPayout = async (req, res, next) => {
   try {
-    const { committeeId, cycleId } = req.body;
+    const committeeId = req.body.committeeId;
+    const cycleId = req.params.cycleId || req.body.cycleId;
 
     if (!committeeId || !cycleId) {
       return res.status(400).json({

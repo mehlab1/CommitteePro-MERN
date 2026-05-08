@@ -6,7 +6,6 @@ import RegisterPage from "../pages/RegisterPage";
 import DashboardPage from "../pages/DashboardPage";
 import WalletPage from "../pages/WalletPage";
 import ProfilePage from "../pages/ProfilePage";
-import PlaceholderPage from "../pages/PlaceholderPage";
 import CreateCommitteePage from "../pages/CreateCommitteePage";
 import CommitteeDetailPage from "../pages/CommitteeDetailPage";
 import JoinCommitteePage from "../pages/JoinCommitteePage";
@@ -15,6 +14,13 @@ import TransactionReceiptPage from "../pages/TransactionReceiptPage";
 import ExpensesPage from "../pages/ExpensesPage";
 import BudgetsPage from "../pages/BudgetsPage";
 import NotificationsPage from "../pages/NotificationsPage";
+import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
+import AdminUsersPage from "../pages/admin/AdminUsersPage";
+import AdminWalletsPage from "../pages/admin/AdminWalletsPage";
+import AdminTransactionsPage from "../pages/admin/AdminTransactionsPage";
+import AdminFlaggedPage from "../pages/admin/AdminFlaggedPage";
+import AdminCategoriesPage from "../pages/admin/AdminCategoriesPage";
+import AdminReportsPage from "../pages/admin/AdminReportsPage";
 
 const AppRoutes = () => {
   return (
@@ -124,7 +130,7 @@ const AppRoutes = () => {
         path="/admin"
         element={
           <ProtectedRoute adminOnly>
-            <PlaceholderPage title="Admin Dashboard" />
+            <AdminDashboardPage />
           </ProtectedRoute>
         }
       />
@@ -132,7 +138,7 @@ const AppRoutes = () => {
         path="/admin/users"
         element={
           <ProtectedRoute adminOnly>
-            <PlaceholderPage title="Admin Users" />
+            <AdminUsersPage />
           </ProtectedRoute>
         }
       />
@@ -140,7 +146,7 @@ const AppRoutes = () => {
         path="/admin/wallets"
         element={
           <ProtectedRoute adminOnly>
-            <PlaceholderPage title="Admin Wallets" />
+            <AdminWalletsPage />
           </ProtectedRoute>
         }
       />
@@ -148,7 +154,7 @@ const AppRoutes = () => {
         path="/admin/transactions"
         element={
           <ProtectedRoute adminOnly>
-            <PlaceholderPage title="Admin Transactions" />
+            <AdminTransactionsPage />
           </ProtectedRoute>
         }
       />
@@ -156,7 +162,23 @@ const AppRoutes = () => {
         path="/admin/flagged"
         element={
           <ProtectedRoute adminOnly>
-            <PlaceholderPage title="Admin Flagged Transactions" />
+            <AdminFlaggedPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/categories"
+        element={
+          <ProtectedRoute adminOnly>
+            <AdminCategoriesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/reports"
+        element={
+          <ProtectedRoute adminOnly>
+            <AdminReportsPage />
           </ProtectedRoute>
         }
       />

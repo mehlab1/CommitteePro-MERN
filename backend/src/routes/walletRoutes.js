@@ -5,6 +5,8 @@ const {
   validateWithdrawal,
   validateTransfer,
 } = require("../middlewares/validationMiddleware");
+const { walletLimiter } = require("../middlewares/rateLimitMiddleware");
+const { walletOwnershipMiddleware } = require("../middlewares/ownershipMiddleware");
 const {
   getWallet,
   getWalletSummary,
@@ -15,10 +17,17 @@ const {
 
 const router = express.Router();
 
-router.get("/", authMiddleware, getWallet);
-router.get("/summary", authMiddleware, getWalletSummary);
-router.post("/deposit", authMiddleware, validateDeposit, deposit);
-router.post("/withdraw", authMiddleware, validateWithdrawal, withdraw);
-router.post("/transfer", authMiddleware, validateTransfer, transfer);
+router.get("/", authMiddleware, walletOwnershipMiddleware, getWallet);
+router.get("/summary", authMiddleware, walletOwnershipMiddleware, getWalletSummary);
+router.post("/deposit", authMiddleware, walletOwnershipMiddleware, walletLimiter, validateDeposit, deposit);
+router.post(
+  "/withdraw",
+  authMiddleware,
+  walletOwnershipMiddleware,
+  walletLimiter,
+  validateWithdrawal,
+  withdraw
+);
+router.post("/transfer", authMiddleware, walletOwnershipMiddleware, walletLimiter, validateTransfer, transfer);
 
 module.exports = router;
