@@ -9,6 +9,7 @@ const userRoutes = require("./routes/userRoutes");
 const walletRoutes = require("./routes/walletRoutes");
 const committeeRoutes = require("./routes/committeeRoutes");
 const bidRoutes = require("./routes/bidRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api/committees", committeeRoutes);
 app.use("/api/bids", bidRoutes);
+app.use("/api/payments", paymentRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);
