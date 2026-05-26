@@ -5,10 +5,11 @@ const errorMiddleware = (err, req, res, next) => {
     console.error(err);
   }
 
-  if (err.name === "ValidationError") {
+  if (err.name === "ValidationError" && err.errors) {
+    const messages = Object.values(err.errors).map((e) => e.message);
     return res.status(400).json({
       success: false,
-      message: err.message || "Validation error",
+      message: messages.join(", ") || "Validation error",
     });
   }
 

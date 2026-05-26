@@ -7,10 +7,25 @@ const UserProfile = require("../models/UserProfile");
 const AgreementSignature = require("../models/AgreementSignature");
 
 const MIN_START_OFFSET_DAYS = 3;
-const addDays = (date, days) => {
-  const next = new Date(date);
-  next.setDate(next.getDate() + days);
-  return next;
+
+const toStartOfDay = (date) => {
+  const normalized = new Date(date);
+  normalized.setHours(0, 0, 0, 0);
+  return normalized;
+};
+
+const parseDateInput = (value) => {
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value)) {
+    const [year, month, day] = value.split("T")[0].split("-").map(Number);
+    return toStartOfDay(new Date(year, month - 1, day));
+  }
+  return toStartOfDay(new Date(value));
+};
+
+const getEarliestStartDate = () => {
+  const earliest = toStartOfDay(new Date());
+  earliest.setDate(earliest.getDate() + MIN_START_OFFSET_DAYS);
+  return earliest;
 };
 
 const createCommittee = async (req, res, next) => {
@@ -55,17 +70,16 @@ const createCommittee = async (req, res, next) => {
       });
     }
 
-    const parsedStartDate = new Date(startDate);
+    const parsedStartDate = parseDateInput(startDate);
     if (Number.isNaN(parsedStartDate.getTime())) {
       return res.status(400).json({ success: false, message: "startDate is invalid" });
     }
 
-    const minAllowedDate = new Date();
-    minAllowedDate.setDate(minAllowedDate.getDate() + MIN_START_OFFSET_DAYS);
-    if (parsedStartDate <= minAllowedDate) {
+    const earliestStartDate = getEarliestStartDate();
+    if (parsedStartDate < earliestStartDate) {
       return res.status(400).json({
         success: false,
-        message: "startDate must be in the future and at least 3 days ahead",
+        message: `startDate must be at least ${MIN_START_OFFSET_DAYS} days from today (earliest: ${earliestStartDate.toISOString().split("T")[0]})`,
       });
     }
 

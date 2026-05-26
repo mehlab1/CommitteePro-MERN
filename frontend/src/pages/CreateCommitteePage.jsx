@@ -1,8 +1,17 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import api from "../services/api";
+
+const MIN_START_OFFSET_DAYS = 3;
+
+const getMinStartDate = () => {
+  const date = new Date();
+  date.setDate(date.getDate() + MIN_START_OFFSET_DAYS);
+  return date.toISOString().split("T")[0];
+};
 
 const initialForm = {
   name: "",
@@ -19,6 +28,8 @@ const CreateCommitteePage = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const minStartDate = useMemo(() => getMinStartDate(), []);
+
   const canContinue = useMemo(() => {
     return (
       form.name &&
@@ -27,9 +38,10 @@ const CreateCommitteePage = () => {
       Number(form.memberCount) <= 20 &&
       form.cycleFrequency &&
       form.payoutModel &&
-      form.startDate
+      form.startDate &&
+      form.startDate >= minStartDate
     );
-  }, [form]);
+  }, [form, minStartDate]);
 
   const createCommittee = async () => {
     setLoading(true);
@@ -44,6 +56,8 @@ const CreateCommitteePage = () => {
       setTimeout(() => {
         navigate(`/committees/${committeeId}`);
       }, 900);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to create committee");
     } finally {
       setLoading(false);
     }
@@ -69,7 +83,16 @@ const CreateCommitteePage = () => {
                 <option value="bidding">Bidding</option>
                 <option value="fixed">Fixed</option>
               </select></label>
-              <label className="text-sm text-gray-700"><span className="mb-1 block">Start date</span><input className="w-full rounded border p-2" type="date" value={form.startDate} onChange={(e) => setForm((p) => ({ ...p, startDate: e.target.value }))} /></label>
+              <label className="text-sm text-gray-700">
+                <span className="mb-1 block">Start date (at least {MIN_START_OFFSET_DAYS} days from today)</span>
+                <input
+                  className="w-full rounded border p-2"
+                  type="date"
+                  min={minStartDate}
+                  value={form.startDate}
+                  onChange={(e) => setForm((p) => ({ ...p, startDate: e.target.value }))}
+                />
+              </label>
               <div className="flex justify-end">
                 <button disabled={!canContinue} onClick={() => setStep(2)} className="rounded bg-indigo-600 px-4 py-2 text-white disabled:bg-indigo-300">
                   Review

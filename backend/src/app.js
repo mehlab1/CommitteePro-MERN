@@ -20,6 +20,9 @@ const reportRoutes = require("./routes/reportRoutes");
 
 const app = express();
 
+// Required behind Render/Vercel proxies for express-rate-limit and req.ip
+app.set("trust proxy", 1);
+
 app.use(helmet());
 app.use(
   cors({
